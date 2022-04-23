@@ -22,4 +22,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\include\SignalSlot\SignalSlot.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
 </Project>

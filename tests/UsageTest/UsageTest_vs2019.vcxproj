@@ -83,6 +83,9 @@
   <ItemGroup>
     <ClCompile Include="UsageTest.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\include\SignalSlot\SignalSlot.hpp" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

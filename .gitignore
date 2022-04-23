@@ -30,3 +30,11 @@
 *.exe
 *.out
 *.app
+tests/UsageTest/.vs/
+*.ipch
+tests/UsageTest/Debug/*
+tests/UsageTest/Release/*
+*.iobj
+*.ipdb
+*.xcuserstate
+*.user
