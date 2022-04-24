@@ -32,13 +32,137 @@
 
 #include "SignalSlot/SignalSlot.hpp"
 
-using namespace std;
+
+#define TEST_INIT(nameOfTest)	\
+	std::string testName = nameOfTest;	\
+	int testReturnValue = 0;
+
+#define TEST_RETURN_VALUE testReturnValue
+
+#define CHECK(condition) \
+	if(!(condition)) { std::cout << "Failed: " << testName << " (" << __FILE__ << ":" << __LINE__ << ")" << std::endl; testReturnValue++; }	\
+	else { std::cout << "Passed: " << testName << std::endl; }
+
+int Test1()
+{
+	TEST_INIT("Test1!");
+	
+	// Arrange
+	Signal<int> signal;
+	int value = 0;
+	int valueExpected = 42;
+	signal.Connect([&value](int v) { value = v;});
+	
+	// Act
+	signal.Emit(42);
+	
+	// Assert
+	CHECK(value == valueExpected);
+	
+	
+	return TEST_RETURN_VALUE;
+}
+
+int Test2()
+{
+	TEST_INIT("Test2: DisconnectAll!");
+	
+	// Arrange
+	Signal<int> signal;
+	int value = 0;
+	int valueExpected = 0;
+	signal.Connect([&value](int v) { value = v;});
+	signal.Connect([&value](int v) { value = v;});
+	signal.Connect([&value](int v) { value = v;});
+	signal.Connect([&value](int v) { value = v;});
+	
+	// Act
+	signal.DisconnectAll();
+	signal.Emit(42);
+	
+	// Assert
+	CHECK(value == valueExpected);
+	
+	
+	return TEST_RETURN_VALUE;
+}
+
+int Test3()
+{
+	TEST_INIT("Test3: Disconnect only one slot!");
+	
+	// Arrange
+	Signal<int> signal;
+	int value = 0;
+	int valueExpected = 42;
+	int slot1Id = signal.Connect([&value, &valueExpected](int) { value = 1;});
+	int slot2Id = signal.Connect([&value, &valueExpected](int) { value = valueExpected;});
+	
+	// Act
+	signal.Disconnect(slot1Id);
+	signal.Emit(0);
+	
+	// Assert
+	CHECK(value == valueExpected);
+	
+	
+	return TEST_RETURN_VALUE;
+}
+
+int Test4()
+{
+	TEST_INIT("Test4: Emit only for a slot!");
+	
+	// Arrange
+	Signal<int> signal;
+	int value = 0;
+	int valueExpected = 42;
+	int slot1Id = signal.Connect([&value, &valueExpected](int) { value = 1;});
+	int slot2Id = signal.Connect([&value, &valueExpected](int) { value = valueExpected;});
+	
+	// Act
+	signal.EmitFor(slot2Id, 0);
+	
+	// Assert
+	CHECK(value == valueExpected);
+	
+	
+	return TEST_RETURN_VALUE;
+}
+
+int Test5()
+{
+	TEST_INIT("Test5: Emit for all except a slot!");
+	
+	// Arrange
+	Signal<int> signal;
+	int value = 0;
+	int valueExpected = 42;
+	int slot1Id = signal.Connect([&value, &valueExpected](int) { value = 1;});
+	int slot2Id = signal.Connect([&value, &valueExpected](int) { value = valueExpected;});
+	
+	// Act
+	signal.EmitForAllButOne(slot1Id, 0);
+	
+	// Assert
+	CHECK(value == valueExpected);
+	
+	
+	return TEST_RETURN_VALUE;
+}
 
 
 int main(int argc, char* argv[])
 {
-    
-    return 0;
+	int returnValue = 0;
+	
+	returnValue += Test1();
+	returnValue += Test2();
+	returnValue += Test3();
+	returnValue += Test4();
+	returnValue += Test5();
+
+    return returnValue;
 }
 
 

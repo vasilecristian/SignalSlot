@@ -26,13 +26,15 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Author: Cristian Vasile
+// Author: Simon Schneegans modified by me (Cristian Vasile)
 //--------------------------------------------------------------------------------
-#ifndef SlotSignal_hpp
-#define SlotSignal_hpp
+#ifndef SignalSlot_hpp
+#define SignalSlot_hpp
 
 #include <functional>
 #include <map>
+
+typedef int SlotId;
 
 template <typename... Args>
 class Signal
@@ -41,7 +43,7 @@ public:
 	Signal()  = default;
 	~Signal() = default;
 
-	Signal(Signal const& /*unused*/) {}
+	Signal(Signal const&) {}
 
 	Signal& operator=(Signal const& other)
 	{
@@ -53,8 +55,8 @@ public:
 	}
 
 	Signal(Signal&& other) noexcept:
-		m_slots(std::move(other._slots)),
-		m_currentId(other._current_id)
+		m_slots(std::move(other.m_slots)),
+		m_currentId(other.m_currentId)
 	{
 	}
 
@@ -64,33 +66,33 @@ public:
 		{
 			m_slots     = std::move(other.m_slots);
 			m_currentId = other.m_currentId;
+		}
+
+		return *this;
 	}
 
-	return *this;
-	}
 
-
-	int Connect(std::function<void(Args...)> const& slot) const
+	SlotId Connect(std::function<void(Args...)> const& slotId) const
 	{
-		m_slots.insert(std::make_pair(++m_currentId, slot));
+		m_slots.insert(std::make_pair(++m_currentId, slotId));
 		return m_currentId;
 	}
 
 	template <typename T>
-	int ConnectMember(T *inst, void (T::*func)(Args...))
+	SlotId Connect(T *inst, void (T::*func)(Args...))
 	{
 		return Connect([=](Args... args) { (inst->*func)(args...); });
 	}
 
 	template <typename T>
-	int ConnectMember(T *inst, void (T::*func)(Args...) const)
+	SlotId Connect(T *inst, void (T::*func)(Args...) const)
 	{
 		return Connect([=](Args... args) { (inst->*func)(args...); });
 	}
 
-	void Disconnect(int id) const
+	void Disconnect(SlotId slotId) const
 	{
-		m_slots.erase(id);
+		m_slots.erase(slotId);
 	}
 
 	void DisconnectAll() const
@@ -106,20 +108,20 @@ public:
 		}
 	}
 
-	void EmitForAllButOne(int excludedConnectionID, Args... p)
+	void EmitForAllButOne(SlotId slotId, Args... p)
 	{
 		for (auto const& it : m_slots)
 		{
-			if (it.first != excludedConnectionID)
+			if (it.first != slotId)
 			{
 				it.second(p...);
 			}
 		}
 	}
 
-	void EmitFor(int connectionID, Args... p)
+	void EmitFor(SlotId slotId, Args... p)
 	{
-		auto const& it = m_slots.find(connectionID);
+		auto const& it = m_slots.find(slotId);
 		if (it != m_slots.end())
 		{
 			it->second(p...);
@@ -127,8 +129,8 @@ public:
 	}
 
 private:
-	mutable std::map< int, std::function<void(Args...)> > m_slots;
+	mutable std::map< SlotId, std::function<void(Args...)> > m_slots;
 	mutable int m_currentId{0};
 };
 
-#endif //SlotSignal_hpp
+#endif //SignalSlot_hpp

@@ -23,7 +23,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		245F6916280C4F1900F980BC /* UsageTest.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = UsageTest.cpp; sourceTree = "<group>"; };
+		245F6916280C4F1900F980BC /* UsageTest.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = UsageTest.cpp; sourceTree = "<group>"; wrapsLines = 0; };
 		249FF12B2814888400D5823C /* SignalSlot.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = SignalSlot.hpp; path = ../../include/SignalSlot/SignalSlot.hpp; sourceTree = "<group>"; };
 		24C6DF10280C496D0020B2FE /* UsageTest_xcode */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = UsageTest_xcode; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
