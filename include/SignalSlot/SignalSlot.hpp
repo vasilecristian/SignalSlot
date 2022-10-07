@@ -34,103 +34,131 @@
 #include <functional>
 #include <map>
 
-typedef int SlotId;
-
-template <typename... Args>
-class Signal
+namespace cb
 {
-public:
-	Signal()  = default;
-	~Signal() = default;
+	typedef int SlotId;
 
-	Signal(Signal const&) {}
+	template <typename... Args>
+	class Signal;
 
-	Signal& operator=(Signal const& other)
+	template <typename... Args>
+	class Slot
 	{
-		if (this != &other)
+		Signal<Args...>& m_signal;
+		SlotId m_slotId;
+	public:
+		Slot(Signal<Args...>& signal, SlotId slotId): m_signal(signal), m_slotId(slotId){};
+		virtual ~Slot() { m_signal.Disconnect(*this); }
+		Slot& operator=(Slot const& other)
 		{
-			DisconnectAll();
+			if (this != &other)
+			{
+				m_signal.Disconnect(*this);
+				m_signal = other.m_signal;
+				m_slotId = other.m_slotId;
+			}
+			return *this;
 		}
-		return *this;
-	}
+		SlotId GetSlotId() const { return m_slotId; }
+	};
 
-	Signal(Signal&& other) noexcept:
-		m_slots(std::move(other.m_slots)),
-		m_currentId(other.m_currentId)
+	template <typename... Args>
+	class Signal
 	{
-	}
+		friend class Slot<Args...>;
+	public:
+		Signal() = default;
+		~Signal() = default;
 
-	Signal& operator=(Signal&& other) noexcept
-	{
-		if (this != &other)
+		Signal(Signal const&) {}
+
+		Signal& operator=(Signal const& other)
 		{
-			m_slots     = std::move(other.m_slots);
-			m_currentId = other.m_currentId;
+			if (this != &other)
+			{
+				DisconnectAll();
+			}
+			return *this;
 		}
 
-		return *this;
-	}
-
-
-	SlotId Connect(std::function<void(Args...)> const& slotId) const
-	{
-		m_slots.insert(std::make_pair(++m_currentId, slotId));
-		return m_currentId;
-	}
-
-	template <typename T>
-	SlotId Connect(T *inst, void (T::*func)(Args...))
-	{
-		return Connect([=](Args... args) { (inst->*func)(args...); });
-	}
-
-	template <typename T>
-	SlotId Connect(T *inst, void (T::*func)(Args...) const)
-	{
-		return Connect([=](Args... args) { (inst->*func)(args...); });
-	}
-
-	void Disconnect(SlotId slotId) const
-	{
-		m_slots.erase(slotId);
-	}
-
-	void DisconnectAll() const
-	{
-		m_slots.clear();
-	}
-
-	void Emit(Args... p)
-	{
-		for (auto const& it : m_slots)
+		Signal(Signal&& other) noexcept :
+			m_slots(std::move(other.m_slots)),
+			m_currentId(other.m_currentId)
 		{
-			it.second(p...);
 		}
-	}
 
-	void EmitForAllButOne(SlotId slotId, Args... p)
-	{
-		for (auto const& it : m_slots)
+		Signal& operator=(Signal&& other) noexcept
 		{
-			if (it.first != slotId)
+			if (this != &other)
+			{
+				m_slots = std::move(other.m_slots);
+				m_currentId = other.m_currentId;
+			}
+
+			return *this;
+		}
+
+
+		Slot<Args...> Connect(std::function<void(Args...)> const& slotId)
+		{
+			m_slots.insert(std::make_pair(++m_currentId, slotId));
+			return Slot<Args...>(*this, m_currentId);
+		}
+
+		template <typename T>
+		Slot<Args...> Connect(T *inst, void (T::*func)(Args...))
+		{
+			return Connect([=](Args... args) { (inst->*func)(args...); });
+		}
+
+		template <typename T>
+		Slot<Args...> Connect(T *inst, void (T::*func)(Args...) const)
+		{
+			return Connect([=](Args... args) { (inst->*func)(args...); });
+		}
+
+		void Disconnect(const Slot<Args...>& slot) const
+		{
+			m_slots.erase(slot.GetSlotId());
+		}
+
+		void DisconnectAll() const
+		{
+			m_slots.clear();
+		}
+
+		void Emit(Args... p)
+		{
+			for (auto const& it : m_slots)
 			{
 				it.second(p...);
 			}
 		}
-	}
 
-	void EmitFor(SlotId slotId, Args... p)
-	{
-		auto const& it = m_slots.find(slotId);
-		if (it != m_slots.end())
+		void EmitForAllButOne(const Slot<Args...>& slot, Args... p)
 		{
-			it->second(p...);
+			for (auto const& it : m_slots)
+			{
+				if (it.first != slot.GetSlotId())
+				{
+					it.second(p...);
+				}
+			}
 		}
-	}
 
-private:
-	mutable std::map< SlotId, std::function<void(Args...)> > m_slots;
-	mutable int m_currentId{0};
-};
+		void EmitFor(const Slot<Args...>& slot, Args... p)
+		{
+			auto const& it = m_slots.find(slot.GetSlotId());
+			if (it != m_slots.end())
+			{
+				it->second(p...);
+			}
+		}
+
+	private:
+		mutable std::map<SlotId, std::function<void(Args...)> > m_slots;
+		mutable int m_currentId{ 0 };
+	};
+}
 
 #endif //SignalSlot_hpp

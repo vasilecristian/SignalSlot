@@ -32,6 +32,7 @@
 
 #include "SignalSlot/SignalSlot.hpp"
 
+using namespace cb;
 
 #define TEST_INIT(nameOfTest)	\
 	std::string testName = nameOfTest;	\
@@ -51,10 +52,10 @@ int Test1()
 	Signal<int> signal;
 	int value = 0;
 	int valueExpected = 42;
-	signal.Connect([&value](int v) { value = v;});
+	Slot slot1 = signal.Connect([&value](int v) { value = v;});
 	
 	// Act
-	signal.Emit(42);
+	signal.Emit(valueExpected);
 	
 	// Assert
 	CHECK(value == valueExpected);
@@ -71,10 +72,10 @@ int Test2()
 	Signal<int> signal;
 	int value = 0;
 	int valueExpected = 0;
-	signal.Connect([&value](int v) { value = v;});
-	signal.Connect([&value](int v) { value = v;});
-	signal.Connect([&value](int v) { value = v;});
-	signal.Connect([&value](int v) { value = v;});
+	Slot slot1 = signal.Connect([&value](int v) { value = v;});
+	Slot slot2 = signal.Connect([&value](int v) { value = v;});
+	Slot slot3 = signal.Connect([&value](int v) { value = v;});
+	Slot slot4 = signal.Connect([&value](int v) { value = v;});
 	
 	// Act
 	signal.DisconnectAll();
@@ -94,12 +95,12 @@ int Test3()
 	// Arrange
 	Signal<int> signal;
 	int value = 0;
-	int valueExpected = 42;
-	int slot1Id = signal.Connect([&value, &valueExpected](int) { value = 1;});
-	int slot2Id = signal.Connect([&value, &valueExpected](int) { value = valueExpected;});
+	int valueExpected = 1;
+	Slot slot1 = signal.Connect([&value](int v) { value++;});
+	Slot slot2 = signal.Connect([&value](int v) { value++;});
 	
 	// Act
-	signal.Disconnect(slot1Id);
+	signal.Disconnect(slot1);
 	signal.Emit(0);
 	
 	// Assert
@@ -116,12 +117,12 @@ int Test4()
 	// Arrange
 	Signal<int> signal;
 	int value = 0;
-	int valueExpected = 42;
-	int slot1Id = signal.Connect([&value, &valueExpected](int) { value = 1;});
-	int slot2Id = signal.Connect([&value, &valueExpected](int) { value = valueExpected;});
+	int valueExpected = 1;
+	Slot slot1 = signal.Connect([&value](int v) { value++; });
+	Slot slot2 = signal.Connect([&value](int v) { value++; });
 	
 	// Act
-	signal.EmitFor(slot2Id, 0);
+	signal.EmitFor(slot2, 0);
 	
 	// Assert
 	CHECK(value == valueExpected);
@@ -137,12 +138,78 @@ int Test5()
 	// Arrange
 	Signal<int> signal;
 	int value = 0;
-	int valueExpected = 42;
-	int slot1Id = signal.Connect([&value, &valueExpected](int) { value = 1;});
-	int slot2Id = signal.Connect([&value, &valueExpected](int) { value = valueExpected;});
+	int valueExpected = 1;
+	Slot slot1 = signal.Connect([&value](int v) { value++;});
+	Slot slot2 = signal.Connect([&value](int v) { value++;});
 	
 	// Act
-	signal.EmitForAllButOne(slot1Id, 0);
+	signal.EmitForAllButOne(slot1, 0);
+	
+	// Assert
+	CHECK(value == valueExpected);
+	
+	
+	return TEST_RETURN_VALUE;
+}
+
+int Test6()
+{
+	TEST_INIT("Test6: Check if slot is disconected if Slot object is deleted!");
+	
+	// Arrange
+	Signal<int> signal;
+	int value = 0;
+	int valueExpected = 0;
+	
+	
+	// Act
+	/*Slot slot1 = */signal.Connect([&value](int v) { value = v;});
+	signal.Emit(1);
+	
+	// Assert
+	CHECK(value == valueExpected);
+	
+	
+	return TEST_RETURN_VALUE;
+}
+
+int Test7()
+{
+	TEST_INIT("Test7: Check if slot is disconected if Slot object is deleted!");
+	
+	// Arrange
+	Signal<int> signal;
+	int value = 0;
+	int valueExpected = 0;
+	
+	
+	// Act
+	{
+		Slot slot1 = signal.Connect([&value](int v) { value = v;});
+	}
+	signal.Emit(1);
+	
+	// Assert
+	CHECK(value == valueExpected);
+	
+	
+	return TEST_RETURN_VALUE;
+}
+
+int Test8()
+{
+	TEST_INIT("Test8: Check if slot is disconected if Slot object is copied!");
+	
+	// Arrange
+	Signal<int> signal;
+	int value = 0;
+	int valueExpected = 1;
+	Slot slot1 = signal.Connect([&value](int v) { value = 1;});
+	Slot slot2 = signal.Connect([&value](int v) { value = 2;});
+	
+	// Act
+	slot2 = slot1;
+	signal.Emit(valueExpected);
 	
 	// Assert
 	CHECK(value == valueExpected);
@@ -161,6 +228,9 @@ int main(int argc, char* argv[])
 	returnValue += Test3();
 	returnValue += Test4();
 	returnValue += Test5();
+	returnValue += Test6();
+	returnValue += Test7();
+	returnValue += Test8();
 
     return returnValue;
 }
